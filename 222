@@ -1,0 +1,66 @@
+---
+title: "Project 2"
+author: "IChen Chuang"
+date: "2023-03-20"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+# load the data set
+library(mlbench)
+library(caret)
+data(BreastCancer)
+BreastCancer <- na.omit(BreastCancer) 
+# remove the unique identifier, which is useless and would confuse the machine learning algorithms
+BreastCancer$Id <- NULL 
+set.seed(2)
+```
+```{r}
+
+#  model using decision tree
+require(rpart)
+x.tree <- rpart(Class ~ ., data=BreastCancer)
+plot(x.tree); text(x.tree) 
+summary(x.tree)
+x.tree.pred <- predict(x.tree,BreastCancer,type="class")
+table(x.tree.pred,BreastCancer$Class)
+confusionMatrix(BreastCancer$Class,x.tree.pred)
+
+# model using svm 
+library(e1071)
+x.svm <- svm(Class ~ ., BreastCancer)
+x.svm.pred <- predict(x.svm, BreastCancer)
+table(x.svm.pred,BreastCancer$Class)
+
+#model using neural network
+library(nnet)
+x.nnet <- nnet(Class ~ ., BreastCancer, size=1)
+x.nnet.pred <- predict(x.nnet,BreastCancer,type="class")
+table(x.nnet.pred,BreastCancer$Class)
+
+
+#model using Naive Bays
+library(klaR)
+x.nb <- NaiveBayes(Class ~ ., BreastCancer)
+x.nb.pred <- predict(x.nb,BreastCancer)
+table(x.nb.pred$class,BreastCancer$Class)
+confusionMatrix(x.nb.pred$class, BreastCancer$Class)
+```
+```{r}
+
+library(dplyr)
+combine.classes<-data.frame(x.tree.pred , x.svm.pred,x.nnet.pred, x.nb.pred)
+
+combine.classes[,1]<-ifelse(combine.classes[,2]=="benign", 0, 1)
+combine.classes[,2]<-ifelse(combine.classes[,2]=="benign", 0, 1)
+combine.classes[,3]<-ifelse(combine.classes[,3]=="benign", 0, 1)
+combine.classes[,4]<-ifelse(combine.classes[,4]=="benign", 0, 1)
+majority.vote <- rowSums(combine.classes)
+combine.classes[,5]<-rowSums(combine.classes)
+combine.classes[,6]<-ifelse(combine.classes[,5]>=3, "malignant", "benign")
+table(combine.classes[,6], BreastCancer$Class)
+  
+
+```
